@@ -10,6 +10,15 @@ module.exports = tseslint.config(
   // tseslint.configs.recommended instead.
   tseslint.configs.recommended,
   {
+    files: ['**/*.ts'],
+    // The Figma rules need type information. Each part of the project has its
+    // own tsconfig (plugin code, panel, tests).
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.json', './tsconfig.ui.json', './tsconfig.test.json'],
+        tsconfigRootDir: __dirname,
+      },
+    },
     plugins: {
       '@figma/figma-plugins': figmaPlugin,
     },
@@ -27,6 +36,13 @@ module.exports = tseslint.config(
     },
   },
   {
-    ignores: ['code.js', 'dist', 'eslint.config.js'],
+    // Build and test scripts run in Node.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly' },
+    },
+  },
+  {
+    ignores: ['code.js', 'dist', '.test-out', 'eslint.config.js'],
   },
 )

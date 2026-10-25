@@ -1,13 +1,15 @@
 {
   "name": "Profiler",
   "version": "1.0.0",
-  "description": "Your Figma Plugin",
+  "description": "Generates editable consultant profiles as native Figma layers",
   "main": "code.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run typecheck && node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.ui.json && tsc -p tsconfig.test.json",
+    "test": "node scripts/test.mjs",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "watch": "npm run build -- --watch"
+    "lint:fix": "eslint . --fix"
   },
   "author": "",
   "license": "",
@@ -15,8 +17,14 @@
     "@eslint/js": "^9.39.4",
     "@figma/eslint-plugin-figma-plugins": "*",
     "@figma/plugin-typings": "*",
+    "@types/node": "24.19.2",
+    "esbuild": "0.28.2",
     "eslint": "^9.39.4",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.1"
+  },
+  "dependencies": {
+    "fflate": "0.8.3",
+    "pdfjs-dist": "4.10.38"
   }
 }

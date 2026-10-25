@@ -1,0 +1,15 @@
+{
+  // Parser tests, run in Node via scripts/test.mjs.
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["tests", "src/parser", "src/shared", "src/data", "src/jd"]
+}

@@ -1,11 +1,17 @@
 {
+  // Plugin main code (runs in Figma's sandbox, no DOM).
+  // The panel and tests have their own configs: tsconfig.ui.json, tsconfig.test.json.
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2017",
     "lib": ["es2020"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "strict": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./node_modules/@figma"
-    ]
-  }
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "typeRoots": ["./node_modules/@types", "./node_modules/@figma"],
+    "types": ["plugin-typings"]
+  },
+  "include": ["src/main", "src/shared", "src/data"]
 }

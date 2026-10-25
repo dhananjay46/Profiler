@@ -1,40 +1,60 @@
-Below are the steps to get your plugin running. You can also find instructions at:
+# Profiler
 
-  https://www.figma.com/plugin-docs/plugin-quickstart-guide/
+A Figma Design plugin that generates an editable consultant profile from structured data, using native
+Figma layers (Auto Layout frames, text, components).
 
-This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
+## Build
 
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
+Requires Node.js. From this folder:
 
-  https://nodejs.org/en/download/
+```
+npm install        # once
+npm run build      # type-check + bundle src/ into code.js
+npm run watch      # optional: rebuild code.js on every save (no type-check)
+npm run lint
+```
 
-Next, install TypeScript using the command:
+`code.js` is generated. Never edit it; edit files in `src/` and rebuild.
 
-  npm install -g typescript
+## Run in Figma Desktop
 
-Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
+Development plugins only run in the desktop app.
 
-  npm install --save-dev @figma/plugin-typings
+1. Open a design file.
+2. Menu → Plugins → Development → Import plugin from manifest… → choose `manifest.json` in this folder.
+3. Menu → Plugins → Development → Profiler.
+4. Pick a test profile and click **Generate profile**.
 
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
+After rebuilding, re-run the plugin to pick up changes (no re-import needed).
+Errors are shown in the panel; full details are in Plugins → Development → Show/Hide console.
 
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
+## Structure
 
-For more information, visit https://www.typescriptlang.org/
+```
+manifest.json            plugin settings (entry: code.js, panel: ui.html)
+ui.html                  the plugin panel
+src/
+  shared/types.ts        the ConsultantProfile data contract
+  shared/validate.ts     checks data before rendering
+  shared/messages.ts     panel <-> main code messages
+  data/testProfiles.ts   hardcoded test content
+  main/code.ts           entry point
+  main/theme.ts          colors, type, spacing — edit to restyle
+  main/fonts.ts          font loading with fallbacks
+  main/primitives.ts     Auto Layout / text helpers
+  main/components.ts     reusable Section Title and Chip components
+  main/render/           one file per profile section
+```
 
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
+The plugin creates a **Profiler · Components vN** frame on the page holding the main components. Editing those
+components restyles every generated profile. After changing how components look in code, increase
+`COMPONENT_VERSION` in `src/main/components.ts`; a fresh components frame is created on the next run.
 
-We recommend writing TypeScript code using Visual Studio code:
+Photo, logo, screenshot and tool-logo slots are placeholders: select one in Figma and set an image fill
+(or paste the logo over a tool tile).
+In profile text, wrap phrases in `**double asterisks**` to make them bold (summary and experience descriptions).
 
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-    then select "npm: watch". You will have to do this again every time
-    you reopen Visual Studio Code.
-
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
+The layout uses the Ubuntu font (available in Figma via Google Fonts) and falls back to Inter.
+Sizes and spacing in `src/main/theme.ts` are measured from the reference profile at 852 px wide.
+Competency icons are built-in vectors in `src/main/icons.ts`: empathise, data-visualization,
+user-scenario, mind-mapping, ideate, design (unknown names get a generic icon).

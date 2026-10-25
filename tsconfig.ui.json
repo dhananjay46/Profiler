@@ -1,0 +1,15 @@
+{
+  // Plugin panel (a browser iframe) and the resume parser it uses.
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["src/ui", "src/parser", "src/shared", "src/jd", "src/data"]
+}
