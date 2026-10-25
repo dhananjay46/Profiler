@@ -6,7 +6,8 @@
 // and treats their following text blocks as the content for that section.
 // Anything it can't map goes into the summary field.
 
-import type { ConsultantProfile, ExperienceEntry } from '../shared/types'
+import type { CaseStudy, ConsultantProfile, ExperienceEntry } from '../shared/types'
+import { PROFILE_DATA_KEY } from './render/profile'
 
 type Section = 'summary' | 'education' | 'experience' | 'skills' | 'tools' | 'certifications' | 'other'
 
@@ -44,6 +45,19 @@ function collectTextNodes(node: SceneNode): TextNode[] {
 }
 
 export function readProfileFromFrame(frame: FrameNode | ComponentNode | InstanceNode | GroupNode): ConsultantProfile {
+  // If this frame was produced by the plugin, the full profile is already
+  // serialized on it as plugin data. Reuse it so sections like case studies
+  // (which the text-based heuristic cannot reconstruct) are preserved.
+  if ('getPluginData' in frame) {
+    const stored = frame.getPluginData(PROFILE_DATA_KEY)
+    if (stored) {
+      try {
+        return JSON.parse(stored) as ConsultantProfile
+      } catch {
+        // Corrupt plugin data: fall through to the text-based reader.
+      }
+    }
+  }
   const texts = collectTextNodes(frame as unknown as SceneNode)
   // Order by vertical then horizontal position so the reader walks the layout.
   texts.sort((a, b) => a.absoluteBoundingBox!.y - b.absoluteBoundingBox!.y || a.absoluteBoundingBox!.x - b.absoluteBoundingBox!.x)
@@ -81,6 +95,7 @@ export function readProfileFromFrame(frame: FrameNode | ComponentNode | Instance
   const education = sections.education.map((raw) => parseEducationLine(raw))
   const experience = parseExperienceLines(sections.experience)
   const summary = sections.summary.join('\n\n')
+  const caseStudies = extractCaseStudies(frame as unknown as SceneNode)
 
   return {
     header: { name: name || 'Unknown', title },
@@ -90,7 +105,74 @@ export function readProfileFromFrame(frame: FrameNode | ComponentNode | Instance
     education,
     certifications,
     experience,
+    ...(caseStudies.length > 0 ? { caseStudies } : {}),
   }
+}
+
+/**
+ * Walk the frame tree looking for the "Case Studies" group produced by the
+ * renderer. Each child frame's name is the case study title; its "Details"
+ * sub-group (if any) carries challenge / solution / outcome labelled columns.
+ */
+function extractCaseStudies(node: SceneNode): CaseStudy[] {
+  const out: CaseStudy[] = []
+  const visit = (n: SceneNode): void => {
+    if ('children' in n && n.name === 'Case Studies') {
+      for (const child of n.children) {
+        if (!('children' in child) || !child.name) continue
+        out.push(readCaseStudy(child))
+      }
+      return
+    }
+    if ('children' in n) {
+      for (const child of n.children) visit(child)
+    }
+  }
+  visit(node)
+  return out
+}
+
+function readCaseStudy(block: SceneNode & { children: readonly SceneNode[] }): CaseStudy {
+  const study: CaseStudy = { title: block.name }
+  // Heading text may be "Client\nTitle" or just the title.
+  const heading = block.children.find(
+    (c): c is TextNode => c.type === 'TEXT' && (c.name === 'Heading' || c.name === ''),
+  )
+  if (heading) {
+    const parts = heading.characters.split('\n').map((s) => s.trim()).filter(Boolean)
+    if (parts.length === 2) {
+      study.client = parts[0]
+      study.title = parts[1]
+    } else if (parts.length === 1) {
+      study.title = parts[0]
+    }
+  }
+  // Image count (1 wide or 2 side by side).
+  const screenshots = block.children.find(
+    (c): c is FrameNode => 'children' in c && c.name === 'Screenshots',
+  )
+  if (screenshots && 'children' in screenshots) {
+    const count = screenshots.children.length
+    if (count === 1 || count === 2) study.imageCount = count
+  }
+  // Challenge / Solution / Outcome.
+  const details = block.children.find(
+    (c): c is FrameNode => 'children' in c && c.name === 'Details',
+  )
+  if (details && 'children' in details) {
+    for (const column of details.children) {
+      if (!('children' in column)) continue
+      const label = column.name
+      const textNode = column.children.find((c): c is TextNode => c.type === 'TEXT' && c.name === 'Text')
+      if (!textNode) continue
+      const value = textNode.characters.trim()
+      if (!value) continue
+      if (label === 'Challenge') study.challenge = value
+      else if (label === 'Solution') study.solution = value
+      else if (label === 'Outcome') study.outcome = value
+    }
+  }
+  return study
 }
 
 function flatten(lines: string[]): string[] {

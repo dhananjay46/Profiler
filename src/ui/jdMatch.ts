@@ -23,18 +23,14 @@ import type { ConsultantProfile } from '../shared/types'
 interface JdMatchDeps {
   root: HTMLElement
   send: (message: UiToMainMessage) => void
-  /** Latest reviewed resume profile, if any (set by the Upload tab). */
-  getReviewedProfile: () => ConsultantProfile | null
 }
 
 interface State {
-  source: 'frame' | 'reviewed' | 'sample'
+  source: 'frame' | 'sample'
   sampleId: string
   frame: FrameSourceSummary | null
   frameMessage: string | null
   jdText: string
-  role: string
-  client: string
   jd: ParsedJD | null
   profile: ConsultantProfile | null
   profileLabel: string
@@ -73,8 +69,6 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
     frame: null,
     frameMessage: null,
     jdText: '',
-    role: '',
-    client: '',
     jd: null,
     profile: null,
     profileLabel: '',
@@ -98,11 +92,10 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
   function buildIntro(): HTMLElement {
     const wrap = el('div')
     const h = el('h1')
-    h.textContent = 'Match against a job description'
+    h.textContent = 'Match a job description'
     wrap.append(h)
     const p = el('p', 'intro')
-    p.textContent =
-      'Paste a client JD, pick a source profile and see how it covers the role. Nothing leaves this device — matching happens locally.'
+    p.textContent = 'Paste the JD. See how well a profile fits. Everything stays on this device.'
     wrap.append(p)
     return wrap
   }
@@ -115,15 +108,13 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
 
     const group = el('div', 'jd-source-group')
     group.append(
-      sourceRadio('frame', 'Selected Figma frame', 'Use a profile frame currently selected on the canvas.'),
-      sourceRadio('reviewed', 'Last reviewed resume', 'Use the profile from the Upload tab.'),
-      sourceRadio('sample', 'Built-in sample profile', 'Pick a bundled sample to compare against.'),
+      sourceRadio('frame', 'A profile on the canvas', 'Select a profile frame in Figma.'),
+      sourceRadio('sample', 'A built-in profile', 'Pick one of the included profiles.'),
     )
     wrap.append(group)
 
     if (state.source === 'frame') wrap.append(buildFrameRow())
     if (state.source === 'sample') wrap.append(buildSampleRow())
-    if (state.source === 'reviewed') wrap.append(buildReviewedRow())
     return wrap
   }
 
@@ -165,7 +156,8 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
     row.append(btn)
     const note = el('div', 'muted small')
     if (state.frame) {
-      note.textContent = `Loaded "${state.frame.name}" (${state.frame.profile.experience?.length ?? 0} experience entries). Click again after changing selection.`
+      const count = state.frame.profile.experience?.length ?? 0
+      note.textContent = `Loaded "${state.frame.name}". ${count} experience ${count === 1 ? 'entry' : 'entries'}.`
     } else if (state.frameMessage) {
       note.textContent = state.frameMessage
     } else {
@@ -192,43 +184,15 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
     return row
   }
 
-  function buildReviewedRow(): HTMLElement {
-    const row = el('div', 'jd-source-detail')
-    const note = el('div', 'muted small')
-    const reviewed = deps.getReviewedProfile()
-    note.textContent = reviewed
-      ? `Will use "${reviewed.header.name}" from the Upload tab.`
-      : 'No reviewed resume yet. Upload one from the Upload tab first.'
-    row.append(note)
-    return row
-  }
-
   function buildJdInput(): HTMLElement {
     const wrap = el('div', 'jd-section')
-    const grid = el('div', 'grid2')
-
-    const roleField = field('Role (optional)', (input) => {
-      input.value = state.role
-      input.addEventListener('input', () => {
-        state.role = input.value
-      })
-    })
-    const clientField = field('Client / company (optional)', (input) => {
-      input.value = state.client
-      input.addEventListener('input', () => {
-        state.client = input.value
-      })
-    })
-    grid.append(roleField, clientField)
-    wrap.append(grid)
-
     const label = el('label', 'section-label')
     label.textContent = 'Job description'
     wrap.append(label)
 
     const ta = el('textarea', 'jd-input') as HTMLTextAreaElement
     ta.rows = 10
-    ta.placeholder = 'Paste the full JD here. Requirements, responsibilities, nice-to-haves, education, etc.'
+    ta.placeholder = 'Paste the JD.'
     ta.value = state.jdText
     ta.addEventListener('input', () => {
       state.jdText = ta.value
@@ -237,63 +201,72 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
     return wrap
   }
 
-  function field(labelText: string, build: (input: HTMLInputElement) => void): HTMLElement {
-    const w = el('div', 'field')
-    const l = el('label')
-    l.textContent = labelText
-    w.append(l)
-    const input = el('input') as HTMLInputElement
-    input.type = 'text'
-    build(input)
-    w.append(input)
-    return w
-  }
-
   function buildAnalyzeRow(): HTMLElement {
     const row = el('div', 'jd-analyze-row')
     const btn = el('button', 'btn primary') as HTMLButtonElement
-    btn.textContent = 'Analyze JD'
-    btn.addEventListener('click', onAnalyze)
+    if (state.source === 'sample') {
+      btn.textContent = 'Create tailored profile'
+      btn.addEventListener('click', onCreateTailoredDirect)
+    } else {
+      btn.textContent = 'Analyze'
+      btn.addEventListener('click', onAnalyze)
+    }
     row.append(btn)
     return row
   }
 
-  function resolveSourceProfile(): { profile: ConsultantProfile; label: string } | null {
-    if (state.source === 'frame') {
-      if (!state.frame) {
-        setStatus('error', 'Load a selected frame first.')
-        return null
-      }
-      return { profile: state.frame.profile, label: `Frame: ${state.frame.name}` }
-    }
-    if (state.source === 'reviewed') {
-      const reviewed = deps.getReviewedProfile()
-      if (!reviewed) {
-        setStatus('error', 'No reviewed resume available. Upload one from the Upload tab first.')
-        return null
-      }
-      return { profile: reviewed, label: `Resume: ${reviewed.header.name}` }
-    }
-    const spec = TEST_PROFILES.find((f) => f.id === state.sampleId)
-    if (!spec) {
-      setStatus('error', 'Pick a sample profile.')
-      return null
-    }
-    return { profile: spec.profile, label: `Sample: ${spec.label}` }
-  }
-
-  function onAnalyze(): void {
+  function onCreateTailoredDirect(): void {
     const jdText = state.jdText.trim()
     if (jdText.length < 20) {
-      setStatus('error', 'Paste a JD with at least a few requirements first.')
+      setStatus('error', 'Paste a JD with a few requirements first.')
       return
     }
     const source = resolveSourceProfile()
     if (!source) return
 
-    const jd = parseJD(jdText, { role: state.role, client: state.client })
+    const jd = parseJD(jdText)
     if (jd.requirements.length === 0) {
-      setStatus('error', 'No requirements could be extracted. Try a more structured JD with bullets or headings.')
+      setStatus('error', 'Could not read any requirements. Try a JD with bullets or headings.')
+      return
+    }
+    const report = matchProfile(jd, source.profile)
+    const plan = buildTailorPlan(jd, source.profile, report)
+    const accepted = new Set(
+      plan.suggestions.filter((s) => s.kind !== 'summary-note').map((s) => s.id),
+    )
+    const tailored = applyTailorPlan(source.profile, plan, accepted)
+    setStatus('info', 'Creating the frame…')
+    deps.send({ type: 'jd-generate-tailored', profile: tailored, role: jd.role || undefined })
+  }
+
+  function resolveSourceProfile(): { profile: ConsultantProfile; label: string } | null {
+    if (state.source === 'frame') {
+      if (!state.frame) {
+        setStatus('error', 'Select a profile frame first.')
+        return null
+      }
+      return { profile: state.frame.profile, label: state.frame.name }
+    }
+    const spec = TEST_PROFILES.find((f) => f.id === state.sampleId)
+    if (!spec) {
+      setStatus('error', 'Pick a profile.')
+      return null
+    }
+    return { profile: spec.profile, label: spec.label }
+  }
+
+  function onAnalyze(): void {
+    const jdText = state.jdText.trim()
+    if (jdText.length < 20) {
+      setStatus('error', 'Paste a JD with a few requirements first.')
+      return
+    }
+    const source = resolveSourceProfile()
+    if (!source) return
+
+    const jd = parseJD(jdText)
+    if (jd.requirements.length === 0) {
+      setStatus('error', 'Could not read any requirements. Try a JD with bullets or headings.')
       return
     }
     const report = matchProfile(jd, source.profile)
@@ -305,7 +278,7 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
     state.report = report
     state.plan = plan
     state.acceptedSuggestionIds = new Set(plan.suggestions.filter((s) => s.accepted).map((s) => s.id))
-    state.statusMessage = `Analyzed ${jd.requirements.length} requirements against ${source.label}.`
+    state.statusMessage = `${jd.requirements.length} requirements. Source: ${source.label}.`
     state.statusKind = 'success'
     render()
   }
@@ -326,7 +299,7 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
   function buildScoreCard(report: MatchReport, jd: ParsedJD): HTMLElement {
     const card = el('div', 'jd-score')
     const title = el('div', 'jd-score-title')
-    title.textContent = jd.role ? `Coverage for ${jd.role}` : 'Overall coverage'
+    title.textContent = jd.role ? `Coverage for ${jd.role}` : 'Coverage'
     card.append(title)
 
     const row = el('div', 'jd-score-row')
@@ -346,7 +319,7 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
       const ul = el('ul', 'jd-gap-list')
       for (const g of report.unresolvedGaps) {
         const li = el('li')
-        li.textContent = `${STATUS_LABEL[g.status]} — ${g.requirement.text}`
+        li.textContent = `${STATUS_LABEL[g.status]}: ${g.requirement.text}`
         ul.append(li)
       }
       gaps.append(ul)
@@ -416,7 +389,7 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
     const body = el('div', 'section-body')
     if (plan.suggestions.length === 0) {
       const empty = el('div', 'muted small')
-      empty.textContent = 'No tailoring edits suggested — the source already lines up.'
+      empty.textContent = 'Nothing to tailor. The source already fits.'
       body.append(empty)
     }
     for (const s of plan.suggestions) {
@@ -444,19 +417,24 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
   }
 
   function buildGenerateRow(): HTMLElement {
-    const row = el('div', 'jd-generate-row')
+    const row = el('div', 'jd-generate-row floating')
+    const hint = el('span', 'jd-generate-hint muted small')
+    hint.textContent = 'Layout stays the same. Only content shifts.'
     const btn = el('button', 'btn primary') as HTMLButtonElement
-    btn.textContent = 'Generate tailored Figma frame'
+    btn.textContent = 'Create tailored profile'
     btn.addEventListener('click', onGenerate)
-    row.append(btn)
+    row.append(hint, btn)
     return row
   }
 
   function onGenerate(): void {
     if (!state.profile || !state.plan) return
+    const accepted = state.plan.suggestions.filter((s) => state.acceptedSuggestionIds.has(s.id))
+    const changes = describeChanges(state.profile, state.plan, state.acceptedSuggestionIds, accepted)
+    showChangesPreview(changes)
     const tailored = applyTailorPlan(state.profile, state.plan, state.acceptedSuggestionIds)
-    setStatus('info', 'Generating tailored profile…')
-    deps.send({ type: 'jd-generate-tailored', profile: tailored, role: state.jd?.role || state.role || undefined })
+    setStatus('info', 'Creating the frame…')
+    deps.send({ type: 'jd-generate-tailored', profile: tailored, role: state.jd?.role || undefined })
   }
 
   function buildStatus(): HTMLElement {
@@ -475,7 +453,7 @@ export function renderJdMatch(deps: JdMatchDeps): JdMatchView {
   const view: JdMatchView = {
     onSelectedFrame(frame, message) {
       state.frame = frame
-      state.frameMessage = message ?? (frame ? null : 'Nothing suitable is selected. Click a profile frame on the canvas and try again.')
+      state.frameMessage = message ?? (frame ? null : 'Select a profile frame on the canvas, then try again.')
       render()
     },
     onGenerateStatus(result, text) {
@@ -515,4 +493,68 @@ function countChip(cls: string, text: string): HTMLElement {
   const chip = el('span', `pill ${cls}`)
   chip.textContent = text
   return chip
+}
+
+function describeChanges(
+  profile: ConsultantProfile,
+  plan: TailorPlan,
+  acceptedIds: Set<string>,
+  accepted: TailorPlan['suggestions'],
+): string[] {
+  const out: string[] = []
+  for (const s of accepted) {
+    if (!acceptedIds.has(s.id)) continue
+    if (s.kind === 'reorder-experience') {
+      const firstIdx = plan.experienceOrder[0]
+      const first = profile.experience?.[firstIdx]
+      const title = first?.project || first?.role || `Entry ${firstIdx + 1}`
+      out.push(`Reordered experience — "${title}" moved to the top`)
+    } else if (s.kind === 'highlight-skill') {
+      const movedUp = plan.promotedSkills.filter((v, i) => (profile.skills ?? []).indexOf(v) > i).slice(0, 3)
+      if (movedUp.length > 0) out.push(`Promoted skills: ${movedUp.join(', ')}`)
+      else out.push('Promoted matching skills to the top')
+    } else if (s.kind === 'highlight-tool') {
+      const movedUp = plan.promotedTools.filter((v, i) => (profile.tools ?? []).indexOf(v) > i).slice(0, 3)
+      if (movedUp.length > 0) out.push(`Promoted tools: ${movedUp.join(', ')}`)
+      else out.push('Promoted matching tools to the top')
+    } else if (s.kind === 'summary-note') {
+      out.push(s.summary)
+    }
+  }
+  if (out.length === 0) out.push('No content changes needed — profile already fits')
+  return out
+}
+
+function showChangesPreview(changes: string[]): void {
+  const prev = document.querySelector('.jd-changes')
+  if (prev) prev.remove()
+  if (changes.length === 0) return
+  const panel = document.createElement('div')
+  panel.className = 'jd-changes'
+  const title = document.createElement('div')
+  title.className = 'jd-changes-title'
+  const dot = document.createElement('span')
+  dot.className = 'jd-changes-dot'
+  const tt = document.createElement('span')
+  tt.textContent = 'Tailoring profile content'
+  title.append(dot, tt)
+  panel.append(title)
+  changes.forEach((text, i) => {
+    const item = document.createElement('div')
+    item.className = 'jd-change-item'
+    item.style.animationDelay = `${0.1 + i * 0.18}s`
+    const mark = document.createElement('span')
+    mark.className = 'mark'
+    mark.textContent = '✓'
+    const label = document.createElement('span')
+    label.textContent = text
+    item.append(mark, label)
+    panel.append(item)
+  })
+  document.body.append(panel)
+  const total = 2200 + changes.length * 180
+  window.setTimeout(() => {
+    panel.classList.add('leaving')
+    window.setTimeout(() => panel.remove(), 400)
+  }, total)
 }

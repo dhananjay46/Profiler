@@ -31,6 +31,7 @@ import { renderSkills, renderTools } from './skillsTools'
 import { renderSummary } from './summary'
 
 export const GENERATED_KEY = 'profiler-generated'
+export const PROFILE_DATA_KEY = 'profiler-profile-data'
 
 export interface GenerateResult {
   frame: FrameNode
@@ -80,6 +81,7 @@ export async function generateProfile(
     renderCaseStudies(root, profile.caseStudies)
 
     root.setPluginData(GENERATED_KEY, 'profile')
+    root.setPluginData(PROFILE_DATA_KEY, JSON.stringify(profile))
     placeRightOfContent(root, page)
     return { frame: root, fontFamily }
   } catch (error) {

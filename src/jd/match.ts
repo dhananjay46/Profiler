@@ -10,7 +10,7 @@ import type { ConsultantProfile } from '../shared/types'
 import { normalize } from './parse'
 import type { MatchEvidence, MatchReport, MatchResult, MatchStatus, ParsedJD, Requirement } from './types'
 
-/** Needles too generic to be meaningful on their own — would match everything. */
+/** Needles too generic to be meaningful on their own: they would match everything. */
 const GENERIC_NEEDLES = new Set([
   'in', 'of', 'on', 'to', 'at', 'by', 'is', 'it', 'as', 'an', 'be', 'or', 'if',
   'with', 'for', 'from', 'the', 'and', 'you', 'your', 'our', 'strong',
@@ -36,10 +36,10 @@ function flattenProfile(profile: ConsultantProfile): SourceChunk[] {
   for (const tool of profile.tools ?? []) add('Tools', tool)
   for (const comp of profile.competencies ?? []) add('Competencies', comp.label)
   for (const edu of profile.education ?? []) {
-    add('Education', [edu.degree, edu.institution].filter(Boolean).join(' — '))
+    add('Education', [edu.degree, edu.institution].filter(Boolean).join(' · '))
   }
   for (const cert of profile.certifications ?? []) {
-    add('Certifications', [cert.name, cert.issuer].filter(Boolean).join(' — '))
+    add('Certifications', [cert.name, cert.issuer].filter(Boolean).join(' · '))
   }
   for (const exp of profile.experience ?? []) {
     const head = [exp.project, exp.role, exp.company, exp.industry].filter(Boolean).join(' | ')
@@ -50,7 +50,7 @@ function flattenProfile(profile: ConsultantProfile): SourceChunk[] {
   }
   for (const cs of profile.caseStudies ?? []) {
     const section = `Case study: ${cs.title}`
-    add(section, [cs.title, cs.client].filter(Boolean).join(' — '))
+    add(section, [cs.title, cs.client].filter(Boolean).join(' · '))
     add(section, cs.challenge)
     add(section, cs.solution)
     add(section, cs.outcome)
@@ -176,7 +176,7 @@ function matchOne(req: Requirement, chunks: SourceChunk[]): MatchResult {
       requirement: req,
       status: 'needs-verification',
       evidence: [],
-      reason: 'Years of experience are not stated as a count in the profile — review manually.',
+      reason: 'Years of experience are not stated as a count. Review manually.',
     }
   }
   const partial = partialOverlap(chunks, req)

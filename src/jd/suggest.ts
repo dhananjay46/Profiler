@@ -95,13 +95,13 @@ export function buildTailorPlan(jd: ParsedJD, profile: ConsultantProfile, report
     })
   }
 
-  // Gap note on the summary — never rewrites, just flags.
+  // Gap note on the summary: never rewrites, just flags.
   const mandatoryGaps = report.unresolvedGaps.filter((g) => g.status === 'missing')
   if (mandatoryGaps.length > 0) {
     suggestions.push({
       id: nextId(),
       kind: 'summary-note',
-      summary: `${mandatoryGaps.length} mandatory requirement${mandatoryGaps.length === 1 ? '' : 's'} not documented — confirm with the consultant before sharing`,
+      summary: `${mandatoryGaps.length} mandatory requirement${mandatoryGaps.length === 1 ? '' : 's'} not documented. Confirm with the consultant before sharing.`,
       detail: mandatoryGaps.map((g) => `• ${g.requirement.text}`).join('\n'),
       accepted: false,
     })

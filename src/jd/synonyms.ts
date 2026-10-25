@@ -1,5 +1,5 @@
 // A small, curated synonym and acronym map used when matching JD requirements
-// against resume evidence. Kept intentionally short — not a knowledge base.
+// against resume evidence. Kept intentionally short: not a knowledge base.
 // Everything is lowercase. Both directions are expanded at lookup time.
 
 export const SYNONYMS: Record<string, string[]> = {

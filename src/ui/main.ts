@@ -30,7 +30,6 @@ const reviewGenerate = $<HTMLButtonElement>('review-generate')
 
 let review: ReviewView | null = null
 let fixtures: FixtureOption[] = []
-let reviewedProfile: import('../shared/types').ConsultantProfile | null = null
 let jdMatch: JdMatchView | null = null
 /** Which screen the next status message from the main code belongs to. */
 let pendingRequest: 'review' | 'test' | 'jd' | null = null
@@ -57,7 +56,6 @@ function showTab(tab: 'upload' | 'test' | 'jd'): void {
         if (message.type === 'jd-generate-tailored') pendingRequest = 'jd'
         send(message)
       },
-      getReviewedProfile: () => reviewedProfile,
     })
   }
 }
@@ -157,7 +155,6 @@ reviewGenerate.addEventListener('click', () => {
     reviewStatus.textContent = `Fix these first: ${errors.join(' ')}`
     return
   }
-  reviewedProfile = profile
   pendingRequest = 'review'
   reviewGenerate.disabled = true
   send({ type: 'generate-profile', profile })
@@ -227,7 +224,7 @@ function populateFixtureOptions(options: FixtureOption[]): void {
   const children: Node[] = []
   if (samples.length > 0) {
     const group = document.createElement('optgroup')
-    group.label = 'Samples'
+    group.label = 'Examples'
     group.append(...samples.map(makeOption))
     children.push(group)
   }
