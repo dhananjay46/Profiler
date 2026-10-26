@@ -9,7 +9,7 @@ import * as pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs'
 import { parseResume, ResumeFileError, type ParseResult } from '../parser'
 import { MAX_FILE_BYTES } from '../parser/fileType'
 import type { PdfJsLike } from '../parser/pdf'
-import type { FixtureOption, MainToUiMessage, UiToMainMessage } from '../shared/messages'
+import type { FixtureOption, MainToUiMessage, SelectedFrame, UiToMainMessage } from '../shared/messages'
 import { renderJdMatch, type JdMatchView } from './jdMatch'
 import { renderReview, type ReviewView } from './review'
 
@@ -31,8 +31,10 @@ const reviewGenerate = $<HTMLButtonElement>('review-generate')
 let review: ReviewView | null = null
 let fixtures: FixtureOption[] = []
 let jdMatch: JdMatchView | null = null
+/** The frame selected on the canvas, kept for the JD Match tab until it opens. */
+let selection: SelectedFrame | null = null
 /** Which screen the next status message from the main code belongs to. */
-let pendingRequest: 'review' | 'test' | 'jd' | null = null
+let pendingRequest: 'review' | 'test' | null = null
 
 function send(message: UiToMainMessage): void {
   parent.postMessage({ pluginMessage: message }, '*')
@@ -50,13 +52,7 @@ function showTab(tab: 'upload' | 'test' | 'jd'): void {
   views.review.hidden = tab !== 'upload' || review === null
   footer.hidden = views.review.hidden
   if (tab === 'jd' && !jdMatch) {
-    jdMatch = renderJdMatch({
-      root: views.jd,
-      send: (message) => {
-        if (message.type === 'jd-generate-tailored') pendingRequest = 'jd'
-        send(message)
-      },
-    })
+    jdMatch = renderJdMatch({ root: views.jd, send, selection })
   }
 }
 $('tab-upload').addEventListener('click', () => showTab('upload'))
@@ -369,15 +365,12 @@ window.addEventListener('message', (event: MessageEvent) => {
       reviewStatus.className = `status ${msg.state === 'error' ? 'error' : msg.state === 'success' ? 'success' : ''}`
       reviewStatus.textContent = msg.message
       reviewGenerate.disabled = msg.state === 'working'
-    } else if (target === 'jd') {
-      jdMatch?.onGenerateStatus(msg.state, msg.message)
     }
     return
   }
 
-  if (msg.type === 'jd-selected-frame') {
-    jdMatch?.onSelectedFrame(msg.frame, msg.message)
-  }
+  if (msg.type === 'selection') selection = msg.frame
+  jdMatch?.onMessage(msg)
 })
 
 send({ type: 'ready' })

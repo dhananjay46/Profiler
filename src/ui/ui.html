@@ -608,29 +608,19 @@
 
   /* ---------- JD Match ---------- */
   .jd-match { display: grid; gap: 14px; }
-  .jd-section { display: grid; gap: 10px; }
-  .jd-source-group {
-    display: grid;
-    gap: 6px;
-  }
-  .jd-source-radio {
-    display: grid;
-    grid-template-columns: auto 1fr;
+  .jd-section { display: grid; gap: 8px; }
+  .jd-frame {
+    display: flex;
+    align-items: center;
     gap: 8px;
-    align-items: start;
     padding: 8px 10px;
-    border: 1px solid var(--border);
+    border: 1px dashed var(--border-strong);
     border-radius: var(--radius-sm);
-    cursor: pointer;
+    color: var(--muted);
   }
-  .jd-source-radio input { margin-top: 2px; }
-  .jd-source-detail {
-    display: grid;
-    gap: 6px;
-    padding: 8px 10px;
-    background: var(--bg2);
-    border-radius: var(--radius-sm);
-  }
+  .jd-frame.ready { border-style: solid; border-color: var(--border); background: var(--bg2); color: var(--text); font-weight: 500; }
+  .jd-frame-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); flex: none; }
+  .jd-frame.ready .jd-frame-dot { background: var(--ok); }
   .jd-input {
     width: 100%;
     min-height: 160px;
@@ -647,110 +637,72 @@
     border-color: var(--focus-ring);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus-ring) 25%, transparent);
   }
-  .jd-analyze-row, .jd-generate-row {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-  .jd-generate-row.floating {
-    position: sticky;
-    bottom: -20px;
-    z-index: 4;
-    margin: 6px -18px -20px;
-    padding: 10px 18px 12px;
-    background: color-mix(in srgb, var(--bg) 92%, transparent);
-    backdrop-filter: saturate(140%) blur(8px);
-    -webkit-backdrop-filter: saturate(140%) blur(8px);
-    border-top: 1px solid var(--border);
-    align-items: center;
-    gap: 10px;
-  }
-  .jd-generate-row.floating .jd-generate-hint {
-    flex: 1;
-    min-width: 0;
-    text-align: left;
-  }
-  .jd-generate-row.floating .btn.primary {
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--brand) 35%, transparent);
-  }
-
-  .jd-changes {
-    position: fixed;
-    right: 14px;
-    bottom: 70px;
-    max-width: 300px;
-    background: var(--bg);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius);
-    box-shadow: 0 10px 28px rgba(0,0,0,.22);
-    padding: 10px 12px 11px;
-    display: grid;
-    gap: 6px;
-    z-index: 20;
-    animation: changes-in .28s ease-out;
-    pointer-events: none;
-  }
-  .jd-changes.leaving { animation: changes-out .35s ease-in forwards; }
-  .jd-changes-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 600;
-    font-size: 11px;
-    color: var(--text);
-  }
-  .jd-changes-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--brand);
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 60%, transparent);
-    animation: pulse-dot 1.1s ease-out infinite;
-  }
-  .jd-change-item {
-    display: flex;
-    gap: 6px;
-    align-items: flex-start;
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.4;
-    opacity: 0;
-    animation: change-reveal .35s ease-out forwards;
-  }
-  .jd-change-item .mark {
-    color: var(--ok);
-    font-weight: 700;
-    flex: none;
-  }
-  @keyframes changes-in {
-    from { transform: translateY(10px); opacity: 0; }
-    to { transform: none; opacity: 1; }
-  }
-  @keyframes changes-out {
-    to { transform: translateY(10px); opacity: 0; }
-  }
-  @keyframes change-reveal {
-    from { opacity: 0; transform: translateX(-6px); }
-    to { opacity: 1; transform: none; }
-  }
-  @keyframes pulse-dot {
-    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 55%, transparent); }
-    70% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--brand) 0%, transparent); }
-    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 0%, transparent); }
-  }
-  .jd-score {
+  .jd-card {
     display: grid;
     gap: 10px;
     padding: 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: var(--bg2);
+    background: var(--bg);
   }
-  .jd-score-title { font-weight: 600; font-size: 12px; }
-  .jd-score-row {
+  .jd-card-title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .jd-step-badge {
+    width: 18px; height: 18px; flex: none;
+    display: inline-grid; place-items: center;
+    border-radius: 50%;
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 10px; font-weight: 700;
+  }
+  .jd-segment { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .jd-segment-option {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
     align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .12s, background .12s, box-shadow .12s;
   }
+  .jd-segment-option:hover { border-color: var(--border-strong); }
+  .jd-segment-option:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+  .jd-segment-option.on {
+    border-color: var(--brand);
+    background: var(--info-bg);
+    box-shadow: inset 0 0 0 1px var(--brand);
+  }
+  .jd-segment-option:disabled { opacity: .5; cursor: default; }
+  .jd-segment-icon {
+    width: 28px; height: 28px; flex: none;
+    display: inline-grid; place-items: center;
+    border-radius: var(--radius-sm);
+    background: var(--bg2);
+    color: var(--muted);
+  }
+  .jd-segment-option.on .jd-segment-icon { background: var(--brand); color: var(--on-brand); }
+  .jd-segment-icon svg { width: 16px; height: 16px; }
+  .jd-segment-text { display: grid; gap: 1px; min-width: 0; }
+  .jd-frame-text { display: grid; gap: 1px; min-width: 0; }
+  .jd-frame-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .jd-builtin { display: grid; gap: 6px; }
+  .jd-select { width: 100%; }
+  .jd-input-meta { display: flex; justify-content: space-between; align-items: center; margin-top: -4px; }
+  .jd-text-btn {
+    border: none;
+    background: none;
+    padding: 2px 4px;
+    color: var(--info);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .jd-text-btn:hover { text-decoration: underline; }
+
+  .jd-result { gap: 12px; }
+  .jd-result-title { font-weight: 600; font-size: 13px; }
+  .jd-stats { display: flex; flex-wrap: wrap; gap: 8px; }
   .jd-score-pill {
     display: inline-flex;
     flex-direction: column;
@@ -764,56 +716,83 @@
   .jd-score-pill.err { background: var(--danger-bg); color: var(--danger); }
   .jd-score-num { font-size: 16px; font-weight: 700; line-height: 1.1; }
   .jd-score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
-  .jd-gaps {
-    padding: 10px;
-    border-radius: var(--radius-sm);
-    background: var(--danger-bg);
-    color: var(--danger);
-  }
-  .jd-gaps-title { font-weight: 600; margin-bottom: 4px; }
-  .jd-gap-list { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
-  .jd-req {
-    padding: 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg);
-    display: grid;
-    gap: 6px;
-  }
-  .jd-req-head {
+  .message.warn { background: var(--warn-bg); color: var(--warn); }
+  .jd-list-box ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 2px; }
+  .jd-filters {
+    position: sticky;
+    top: -18px;
+    z-index: 3;
     display: flex;
     gap: 6px;
+    margin: 0 -18px;
+    padding: 10px 18px;
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: saturate(140%) blur(8px);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .jd-filter {
+    flex: 1;
+    display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
-  }
-  .jd-req-head .status-badge {
-    font-size: 10.5px;
-    font-weight: 500;
-    padding: 2px 8px;
+    justify-content: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
     border-radius: 999px;
+    background: var(--bg);
+    color: var(--muted);
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
   }
-  .jd-req-head .status-badge.ok { background: var(--ok-bg); color: var(--ok); }
-  .jd-req-head .status-badge.warn { background: var(--warn-bg); color: var(--warn); }
-  .jd-req-head .status-badge.err { background: var(--danger-bg); color: var(--danger); }
-  .jd-req-head .status-badge.info { background: var(--info-bg); color: var(--info); }
-  .jd-req-text { font-weight: 500; }
-  .jd-req-meta { color: var(--muted); font-size: 11px; }
-  .jd-req-evidence { margin: 0; padding-left: 18px; display: grid; gap: 2px; font-size: 11px; color: var(--muted); }
-  .jd-req-evidence li { line-height: 1.4; }
-  .jd-sug {
+  .jd-filter:hover { border-color: var(--border-strong); color: var(--text); }
+  .jd-filter:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+  .jd-filter.on { background: var(--text); border-color: var(--text); color: var(--bg); }
+  .jd-filter-count {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 16px;
+  }
+  .jd-filter.on .jd-filter-count { background: color-mix(in srgb, var(--bg) 25%, transparent); color: var(--bg); }
+  .jd-group-count { margin-left: auto; color: var(--muted2); font-size: 11px; }
+  .jd-create-bar {
+    position: sticky;
+    bottom: -20px;
+    z-index: 4;
+    display: grid;
+    gap: 6px;
+    margin: 4px -18px -20px;
+    padding: 10px 18px 14px;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: saturate(140%) blur(8px);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    border-top: 1px solid var(--border);
+  }
+  .jd-create-caption { text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .jd-create-bar .btn.primary { box-shadow: 0 4px 14px color-mix(in srgb, var(--brand) 35%, transparent); }
+  .jd-group .section-body { display: grid; gap: 8px; }
+  .jd-diff {
+    display: grid;
+    gap: 6px;
     padding: 10px;
     border: 1px solid var(--border);
+    border-left: 3px solid var(--warn);
     border-radius: var(--radius-sm);
     background: var(--bg);
   }
-  .jd-sug-label {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 8px;
-    cursor: pointer;
-  }
-  .jd-sug-detail { margin-top: 4px; white-space: pre-wrap; }
-  .jd-status { margin-top: 4px; }
+  .jd-diff.added { border-left-color: var(--ok); }
+  .jd-diff-row { display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: baseline; }
+  .jd-diff-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted2); }
+  .jd-diff-text { line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .jd-diff-text .ins { background: var(--ok-bg); color: var(--ok); border-radius: 2px; }
+  .jd-diff-text .del { background: var(--danger-bg); color: var(--danger); text-decoration: line-through; border-radius: 2px; }
   .pill.ok { background: var(--ok-bg); color: var(--ok); }
   .pill.warn { background: var(--warn-bg); color: var(--warn); }
   .pill.err { background: var(--danger-bg); color: var(--danger); }

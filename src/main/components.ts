@@ -156,6 +156,50 @@ function buildToolTile(): ComponentNode {
   return component
 }
 
+/**
+ * Puts `copy` side by side with `original`: in the same page or section, just
+ * to its right and top-aligned, with `gap` between them. Anything already in
+ * that spot is stepped past, so nothing overlaps; a section grows to fit.
+ *
+ * When the original sits inside a frame, group or instance, the copy goes
+ * beside the outermost one instead, since a copy inside it would join its
+ * layout or be clipped. Call again once the copy has its final size.
+ */
+export function placeBeside(copy: SceneNode, original: SceneNode, gap = 120): void {
+  let anchor: SceneNode = original
+  while (anchor.parent && anchor.parent.type !== 'PAGE' && anchor.parent.type !== 'SECTION') {
+    anchor = anchor.parent as SceneNode
+  }
+  const parent = anchor.parent as PageNode | SectionNode
+  if (copy.parent !== parent) parent.insertChild(parent.children.indexOf(anchor) + 1, copy)
+
+  copy.x = anchor.x + anchor.width + gap
+  copy.y = anchor.y
+  // Siblings in the way, including any earlier copies: keep a full gap clear of each.
+  const others = parent.children.filter((n) => n !== copy && n !== anchor)
+  let moved = true
+  while (moved) {
+    moved = false
+    for (const other of others) {
+      const overlaps =
+        copy.x < other.x + other.width + gap &&
+        copy.x + copy.width + gap > other.x &&
+        copy.y < other.y + other.height &&
+        copy.y + copy.height > other.y
+      if (overlaps) {
+        copy.x = other.x + other.width + gap
+        moved = true
+      }
+    }
+  }
+
+  if (parent.type === 'SECTION') {
+    const width = Math.max(parent.width, copy.x + copy.width + gap / 2)
+    const height = Math.max(parent.height, copy.y + copy.height + gap / 2)
+    if (width !== parent.width || height !== parent.height) parent.resizeWithoutConstraints(width, height)
+  }
+}
+
 /** Moves `node` to the right of everything else on the page, so nothing overlaps. */
 export function placeRightOfContent(node: SceneNode, page: PageNode, gap = 120): void {
   const others = page.children.filter((n) => n !== node)
