@@ -1,7 +1,12 @@
 # Node
 *.log
 *.log.*
-node_modules
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
 
 out/
 dist/
